@@ -12,7 +12,7 @@
 * 结合[lm](http://github.com/simplejia/lm)使用更简单快捷
 
 ## demo
-[lc_test.go](http://github.com/simplejia/lc/lc_test.go)
+[lc_test.go](http://github.com/simplejia/lc/tree/master/lc_test.go)
 ```
 package lc
 
