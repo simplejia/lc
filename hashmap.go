@@ -1,6 +1,10 @@
 package lc
 
-import "time"
+import (
+	"time"
+
+	"github.com/simplejia/utils"
+)
 
 type Elem struct {
 	Key   string
@@ -26,16 +30,8 @@ func (this *HashMap) Init(num int) *HashMap {
 	return this
 }
 
-func (this *HashMap) hash33(src string) int {
-	hash := 5381
-	for i := 0; i < len(src); i++ {
-		hash = hash<<5 + hash + int(src[i])
-	}
-	return hash & 0x7fffffff
-}
-
 func (this *HashMap) getElem(key string) (elem *Elem, pos int) {
-	hash := this.hash33(key)
+	hash := utils.Hash33(key)
 	index := (hash % this.bnum) * this.blen
 
 	var oldRecord *Elem
