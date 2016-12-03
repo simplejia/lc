@@ -1,3 +1,6 @@
+[中文 README](#中文)
+
+
 # [lc](http://github.com/simplejia/lc) (local cache)
 ## Original Intention
 * Compared with lc, only using redis to cache is with these disadvantages such as network overhead, latency increasing dramatically if call repeatedly. In addition, using redis, when there is something wrong with the network, we cannot get data from redis. But in lc, even if the data is expired, we still can get the expired data. 
@@ -38,6 +41,8 @@ func TestGetValid(t *testing.T) {
 ```
 
 ---
+中文
+===
 
 # [lc](http://github.com/simplejia/lc) (local cache)
 ## 实现初衷
