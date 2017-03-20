@@ -1,3 +1,5 @@
+// NOTICE: hashmap is not ok when enable data race detection.
+
 package lc
 
 import (
@@ -7,9 +9,9 @@ import (
 )
 
 type Elem struct {
-	Key   string
-	Value interface{}
-	Birth int64
+	key   string
+	value interface{}
+	birth int64
 }
 
 type HashMap struct {
@@ -18,33 +20,33 @@ type HashMap struct {
 	blen  int
 }
 
-func (this *HashMap) Init(num int) *HashMap {
-	if this == nil {
-		this = new(HashMap)
+func (m *HashMap) Init(num int) *HashMap {
+	if m == nil {
+		m = new(HashMap)
 	}
-	this.blen = 100
-	capacity := num / this.blen * this.blen
-	this.bnum = capacity / this.blen
-	this.elems = make([]*Elem, capacity, capacity)
 
-	return this
+	m.blen = 100
+	m.bnum = int(float64(num)*1.2)/m.blen + 1
+	m.elems = make([]*Elem, m.blen*m.bnum)
+
+	return m
 }
 
-func (this *HashMap) getElem(key string) (elem *Elem, pos int) {
+func (m *HashMap) getElem(key string) (elem *Elem, pos int) {
 	hash := utils.Hash33(key)
-	index := (hash % this.bnum) * this.blen
+	index := (hash % m.bnum) * m.blen
 
 	var oldRecord *Elem
 	var freeRecordFlag bool
-	for i := 0; i < this.blen; i++ {
+	for i := 0; i < m.blen; i++ {
 		j := index + i
-		tmpRecord := this.elems[j]
+		tmpRecord := m.elems[j]
 		if tmpRecord == nil {
 			pos = j
 			freeRecordFlag = true
 			continue
 		}
-		if tmpRecord.Key == key {
+		if tmpRecord.key == key {
 			pos = j
 			elem = tmpRecord
 			break
@@ -52,7 +54,7 @@ func (this *HashMap) getElem(key string) (elem *Elem, pos int) {
 		if freeRecordFlag {
 			continue
 		}
-		if oldRecord == nil || oldRecord.Birth > tmpRecord.Birth {
+		if oldRecord == nil || oldRecord.birth > tmpRecord.birth {
 			oldRecord = tmpRecord
 			pos = j
 			continue
@@ -62,37 +64,37 @@ func (this *HashMap) getElem(key string) (elem *Elem, pos int) {
 	return
 }
 
-func (this *HashMap) Len() int {
-	return len(this.elems)
+func (m *HashMap) Len() int {
+	return len(m.elems)
 }
 
-func (this *HashMap) Get(key string) (value interface{}, ok bool) {
-	elem, _ := this.getElem(key)
+func (m *HashMap) Get(key string) (value interface{}, ok bool) {
+	elem, _ := m.getElem(key)
 	if elem != nil {
-		value, ok = elem.Value, true
+		value, ok = elem.value, true
 	}
 	return
 }
 
-func (this *HashMap) Set(key string, value interface{}) {
+func (m *HashMap) Set(key string, value interface{}) {
 	now := time.Now().Unix()
-	elem, pos := this.getElem(key)
+	elem, pos := m.getElem(key)
 	if elem != nil {
-		elem.Value, elem.Birth = value, now
+		elem.value, elem.birth = value, now
 	} else {
-		this.elems[pos] = &Elem{
-			Key:   key,
-			Value: value,
-			Birth: now,
+		m.elems[pos] = &Elem{
+			key:   key,
+			value: value,
+			birth: now,
 		}
 	}
 	return
 }
 
-func (this *HashMap) Delete(key string) {
-	elem, pos := this.getElem(key)
+func (m *HashMap) Delete(key string) {
+	elem, pos := m.getElem(key)
 	if elem != nil {
-		this.elems[pos] = nil
+		m.elems[pos] = nil
 	}
 	return
 }

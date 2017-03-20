@@ -20,8 +20,9 @@ type MyList struct {
 	*list.List
 }
 
-func (l *MyList) PushFront(v *entry) {
+func (l *MyList) PushFront(v interface{}) *list.Element {
 	setChan <- v
+	return nil
 }
 
 func (l *MyList) MoveToFront(e *list.Element) {
@@ -29,50 +30,38 @@ func (l *MyList) MoveToFront(e *list.Element) {
 }
 
 func worker() {
+	tick := time.Tick(time.Second)
 	for {
-		func() {
-			defer func() {
-				if err := recover(); err != nil {
-					log.Printf("lc:worker() exit unnormal: %v", err)
-				}
-			}()
-
-			tick := time.Tick(time.Second)
-			for {
-				select {
-				case <-tick:
-					if lru.list.Len() > lru.capacity+1000 {
-						for lru.list.Len() > lru.capacity {
-							e := lru.list.Back()
-							lru.list.Remove(e)
-							kv := e.Value.(*entry)
-							lru.table.Delete(kv.key)
-						}
-					}
-
-					for i := 1000; i > 0 && lru.list.Len() > 0; i-- {
-						e := lru.list.Back()
-						kv := e.Value.(*entry)
-						if time.Now().Sub(kv.expire) > time.Hour {
-							lru.list.Remove(e)
-							lru.table.Delete(kv.key)
-						} else {
-							break
-						}
-					}
-				case itm := <-setChan:
-					switch v := itm.(type) {
-					case *list.Element:
-						lru.list.List.MoveToFront(v)
-					case *entry:
-						e := lru.list.List.PushFront(v)
-						lru.table.Set(v.key, e)
-					}
+		select {
+		case <-tick:
+			if lru.list.Len() > lru.capacity+100 {
+				for lru.list.Len() > lru.capacity {
+					e := lru.list.Back()
+					lru.list.Remove(e)
+					ent := e.Value.(*entry)
+					lru.table.Delete(ent.key)
 				}
 			}
-		}()
 
-		time.Sleep(time.Second)
+			for i := 100; i > 0 && lru.list.Len() > 0; i-- {
+				e := lru.list.Back()
+				ent := e.Value.(*entry)
+				if time.Since(ent.expire) > time.Hour {
+					lru.list.Remove(e)
+					lru.table.Delete(ent.key)
+				} else {
+					break
+				}
+			}
+		case itm := <-setChan:
+			switch v := itm.(type) {
+			case *list.Element:
+				lru.list.List.MoveToFront(v)
+			case *entry:
+				e := lru.list.List.PushFront(v)
+				lru.table.Set(v.key, e)
+			}
+		}
 	}
 }
 
@@ -101,9 +90,10 @@ func NewLru(capacity int) *Lru {
 func (lru *Lru) Get(key string) (ent *entry, ok bool) {
 	element, ok := lru.table.Get(key)
 	if ok {
-		ent = element.(*list.Element).Value.(*entry)
+		e := element.(*list.Element)
+		ent = e.Value.(*entry)
 		if ent.ratio++; ent.ratio&0xFF == 0 {
-			lru.list.MoveToFront(element.(*list.Element))
+			lru.list.MoveToFront(e)
 		}
 	}
 	return
@@ -149,7 +139,7 @@ func Get(key string) (value interface{}, ok bool) {
 
 	value = ent.value
 	if delta := time.Since(ent.expire); delta > 0 {
-		if delta > time.Second*15 {
+		if delta > time.Second*10 {
 			ent = Set(key, value, 0)
 		}
 		ok = !atomic.CompareAndSwapInt32(&(ent.expired), 0, 1)
@@ -170,15 +160,10 @@ func Mget(keys []string) (values, valuesAlter map[string]interface{}) {
 		return
 	}
 
-	values = make(map[string]interface{}, num)
-	valuesAlter = make(map[string]interface{}, num)
-	mapFilter := make(map[string]bool, num)
+	values = map[string]interface{}{}
+	valuesAlter = map[string]interface{}{}
 
 	for _, key := range keys {
-		if mapFilter[key] {
-			continue
-		}
-		mapFilter[key] = true
 		if value, ok := Get(key); ok {
 			values[key] = value
 		} else {
@@ -205,7 +190,6 @@ func GetAll() (items []string) {
 	return
 }
 
-// num 限制存储的key的最大个数
 func Init(num int) {
 	if num <= 0 {
 		num = 65536
