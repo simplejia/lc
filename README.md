@@ -58,6 +58,16 @@ func TestGetValid(t *testing.T) {
 * 结合[lm](http://github.com/simplejia/lm)使用更简单快捷
 
 ## demo
+
+一般使用方式：
+```
+vLc, ok := lc.Get(key)
+v, _ := vLc.(int)
+if ok {
+   return
+}
+```
+
 [lc_test.go](http://github.com/simplejia/lc/tree/master/lc_test.go)
 ```
 package lc
