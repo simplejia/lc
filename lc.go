@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	lru     *Lru
-	setChan = make(chan interface{}, 1e5)
-	Debug   bool
+	lru      *Lru
+	setChan  = make(chan interface{}, 1e5)
+	Debug    bool
+	Disabled bool
 )
 
 type MyList struct {
@@ -115,6 +116,9 @@ func (lru *Lru) Delete(key string) {
 }
 
 func Set(key string, value interface{}, expire time.Duration) (ent *entry) {
+	if Disabled {
+		return
+	}
 	if Debug {
 		log.Printf("[LC] - [Set] - key: %v, value: %v, expire: %v\n", key, value, expire)
 	}
@@ -128,6 +132,9 @@ func Set(key string, value interface{}, expire time.Duration) (ent *entry) {
 }
 
 func Get(key string) (value interface{}, ok bool) {
+	if Disabled {
+		return
+	}
 	if Debug {
 		log.Printf("[LC] - [Get] - key: %v\n", key)
 	}
@@ -151,6 +158,9 @@ func Get(key string) (value interface{}, ok bool) {
 }
 
 func Mget(keys []string) (values, valuesAlter map[string]interface{}) {
+	if Disabled {
+		return
+	}
 	if Debug {
 		log.Printf("[LC] - [Mget] - keys: %v\n", keys)
 	}
@@ -174,6 +184,9 @@ func Mget(keys []string) (values, valuesAlter map[string]interface{}) {
 }
 
 func Delete(key string) {
+	if Disabled {
+		return
+	}
 	if Debug {
 		log.Printf("[LC] - [Delete] - key: %v\n", key)
 	}
