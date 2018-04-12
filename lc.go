@@ -141,7 +141,7 @@ func Get(key string) (value interface{}, ok bool) {
 
 	ent, _ok := lru.Get(key)
 	if !_ok || ent.key != key {
-		ent = Set(key, nil, 0)
+		ent = Set(key, nil, -1)
 	}
 
 	value = ent.value
