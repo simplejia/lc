@@ -6,6 +6,7 @@ import (
 	"container/list"
 	"fmt"
 	"log"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -203,10 +204,14 @@ func GetAll() (items []string) {
 	return
 }
 
+var once sync.Once
+
 func Init(num int) {
-	if num <= 0 {
-		num = 65536
-	}
-	lru = NewLru(num)
-	go worker()
+	once.Do(func() {
+		if num <= 0 {
+			num = 65536
+		}
+		lru = NewLru(num)
+		go worker()
+	})
 }
