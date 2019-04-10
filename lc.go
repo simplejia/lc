@@ -148,7 +148,7 @@ func Get(key string) (value interface{}, ok bool) {
 	value = ent.value
 	if delta := time.Since(ent.expire); delta > 0 {
 		if delta > time.Second*10 {
-			ent = Set(key, value, 0)
+			ent = Set(key, value, -1)
 		}
 		ok = !atomic.CompareAndSwapInt32(&(ent.expired), 0, 1)
 	} else {
